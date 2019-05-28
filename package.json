@@ -8,6 +8,7 @@
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
+    "@azure/storage-blob": "^10.3.0",
     "querystring": "^0.2.0"
   },
   "devDependencies": {}

@@ -1,3 +1,7 @@
+const {
+    getBlob
+} = require("../common/azure-storage");
+
 module.exports = async function (context, req) {
     context.log('JavaScript HTTP trigger function processed a request.');
 
@@ -9,14 +13,15 @@ module.exports = async function (context, req) {
     if (req.body != "") {
         const { parse } = require('querystring');
         const parameters = parse(req.body);
-        //console.log(JSON.stringify(parameters), null, "\t")
+
         if (parameters.token != process.env["slack_token"]) {
             response_body.text += ` ${parameters.token} != ${process.env["slack_token"]}`;
         }
-        else if (parameters.team_id != process.env["team_id"]) {
+        if (parameters.team_id != process.env["team_id"]) {
             response_body.text += ` ${parameters.token} != ${process.env["team_id"]}`;
         }
-        else {
+
+        {
             const re = /<(@\w+)([|]\w+)?/;
 
             const match = re.exec(parameters.text);
@@ -25,6 +30,18 @@ module.exports = async function (context, req) {
                 const user = parameters.user_id;
                 const player = match[1];
                 response_body.text = `<@${user}> requested scores for <${player}>`;
+
+                const fn = () => ({});
+
+                const game_data = await getBlob({
+                    azure_account: process.env["azure_account"],
+                    azure_account_key: process.env["azure_account_key"],
+                    containerName: process.env["azure_container"], 
+                    blobName: parameters.channel_id, 
+                    fn: fn,                    
+                });
+
+                response_body.text += "\n" + JSON.stringify(game_data);
             }
             else response_body.text += ` ${parameters.text}`;
         }
