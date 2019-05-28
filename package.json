@@ -1,10 +1,14 @@
 {
   "name": "scorebotjs",
   "version": "1.0.0",
-  "description": "",
+  "description": "Simple bot to track scores",
+  "license": "MIT",
+  "repository": {},
   "scripts": {
     "test": "echo \"No tests yet...\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "querystring": "^0.2.0"
+  },
   "devDependencies": {}
 }
