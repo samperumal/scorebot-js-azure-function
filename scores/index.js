@@ -166,21 +166,12 @@ function evaluateGameData(game_data) {
 }
 
 function createScoreTable(game_data) {
-    const blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Current score table"
-            }
-        }
-    ];
+    const blocks = [];
 
     for (const [player, data] of evaluateGameData(game_data)) {
         blocks.push({ type: "divider" });
 
-        //const entries = Array.from(data.entries());
-        let mapped = [];//entries.map(e => `${e[0]}: ${e[1]}`);
+        let mapped = [];
         if (player != "Game") {
             for (const resource of TRANSLATION.values()) {
                 mapped.push(`${resource}: ${data.has(resource) ? data.get(resource) : 0}`);
