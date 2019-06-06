@@ -62,12 +62,39 @@ async function processCommand(parameters) {
 
     const game_data = await getBlob(config);
 
-    const re = /^ *<(@\w+)(?:[|]\w+)?> (.+)?$/;
+    const re = /^ *<(@\w+)(?:[|]\w+)?> *(.+)?$/;
     const deltaRe = /([A-Za-z$]+) *: *([0-9+\-]+)/;
 
     const playerMatch = re.exec(parameters.text);
 
-    if (playerMatch != null && playerMatch.length > 1 && playerMatch[1] != null) {
+    if (parameters.text.match(/start (.+)/) != null) {
+        console.log("start");
+        if (game_data != null && game_data.length == 0) {
+            let new_game_data = [["Game", "gen", 0], ["Game", "temp", -30], ["Game", "oxy", 0], ["Game", "lake", 0]];
+            for (const user of parameters.text.match(/start (.+)/)[1].split(" ")) {
+                const user_match = user.match(re);
+                if (user_match != null && user_match[1] != null) {
+                    const new_player = [...addPlayer(user_match[1])];
+                    new_game_data = new_game_data.concat(new_player);
+                }
+            }
+
+            console.log(JSON.stringify(new_game_data));
+            
+            await putBlob(config, new_game_data);
+
+            await axios.post(parameters.response_url, createMessage(`Started a new game`, true, "in_channel"));
+        }
+        else await axios.post(parameters.response_url, createMessage(`Cannot start a new game, one already exists!`, true, "ephemeral"));
+    }
+    else if (parameters.text.match(/generate/) != null) {
+        const new_data = generate(game_data);
+
+        await putBlob(config, game_data.concat(new_data));
+
+        await axios.post(parameters.response_url, createMessage(`Applied updates : ${JSON.stringify(new_data)}`, true, "in_channel"));
+    }
+    else if (playerMatch != null && playerMatch.length > 1 && playerMatch[1] != null) {
         const user = parameters.user_id;
         const player = `<${playerMatch[1]}>`;
         const command = playerMatch[2];
@@ -125,7 +152,7 @@ const TRANSLATION = new Map([
     ["p", "Power"],
     ["pp", "Power Prod"],
     ["h", "Heat"],
-    ["hp", "Heat Prod"],    
+    ["hp", "Heat Prod"],
 ]);
 
 const GAME_TRANSLATION = new Map([
@@ -135,18 +162,19 @@ const GAME_TRANSLATION = new Map([
     ["lake", "Water"]
 ]);
 
-function evaluateGameData(game_data) {
+function evaluateGameData(game_data, translate = true) {
     const result = new Map();
 
     for (const action of game_data) {
         let key = action[0];
-        const resource = action[1];
-        let resource_name = TRANSLATION.has(resource) ? TRANSLATION.get(resource) : resource;
+        const resource = action[1].toLowerCase();
+        let resource_name = (translate && TRANSLATION.has(resource)) ? TRANSLATION.get(resource) : resource;
         const resource_value = +action[2];
 
         if (GAME_TRANSLATION.has(resource)) {
             key = "Game";
-            resource_name = GAME_TRANSLATION.get(resource);
+            if (translate)
+                resource_name = GAME_TRANSLATION.get(resource);
         }
 
         if (!result.has(key)) {
@@ -200,4 +228,34 @@ function createScoreTable(game_data) {
     return {
         blocks: blocks
     };
+}
+
+function generate(game_data) {
+    console.log("Generate called");
+    const new_data = [];
+
+    for (const [player, data] of evaluateGameData(game_data, false)) {
+        if (player != "Game") {
+            for (const [resource, value] of data.entries()) {
+                const match = resource.match(/^(.+)[p$]$/);
+                if (match != null) {
+                    console.log(`Add ${value} to ${match[1]} for ${player}`);
+                    new_data.push([player, match[1], value]);
+                }
+            }
+
+            console.log(player, "$", data.get("tr"));
+            new_data.push([player, "$", data.get("tr")]);
+        }
+    }
+
+    new_data.push(["Game", "gen", 1]);
+
+    return new_data;
+}
+
+function* addPlayer(player) {
+    for (const resource of TRANSLATION.keys()) {
+        yield [player, resource, resource == "tr" ? 20 : 0];
+    }
 }
