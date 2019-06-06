@@ -8,7 +8,7 @@ const {
     SharedKeyCredential
 } = require("@azure/storage-blob");
 
-exports.getBlob = async function (config) {
+function getContainerUrl(config) {
     const sharedKeyCredential = new SharedKeyCredential(config.azure_account, config.azure_account_key);
     const pipeline = StorageURL.newPipeline(sharedKeyCredential);
     const serviceURL = new ServiceURL(
@@ -16,8 +16,11 @@ exports.getBlob = async function (config) {
         pipeline
     );
 
-    const containerURL = ContainerURL.fromServiceURL(serviceURL, config.containerName);
+    return [serviceURL, ContainerURL.fromServiceURL(serviceURL, config.containerName)];
+}
 
+exports.getBlob = async function (config) {
+    const [serviceURL, containerURL] = getContainerUrl(config);
     const blobURL = BlobURL.fromContainerURL(containerURL, config.blobName);
 
     let downloadBlockBlobResponse;
@@ -26,7 +29,7 @@ exports.getBlob = async function (config) {
     }
     catch (err) {
         console.log("Caught in catch 1: ", err.message);
-        const content = config.fn();
+        const content = config.default();
         const contentString = JSON.stringify(content);
         const blockBlobURL = BlockBlobURL.fromBlobURL(blobURL);
         await blockBlobURL.upload(
@@ -40,10 +43,24 @@ exports.getBlob = async function (config) {
 
     // Get blob content from position 0 to the end
     const blobString = await streamToString(downloadBlockBlobResponse.readableStreamBody);
-        //.then(blobString => console.log("Downloaded blob content", blobString))
-        //.catch(err => console.log("Caught in catch 2: ", err.message));
+    //.then(blobString => console.log("Downloaded blob content", blobString))
+    //.catch(err => console.log("Caught in catch 2: ", err.message));
 
     return blobString;
+}
+
+exports.putBlob = async function (config, content) {
+    const [serviceURL, containerURL] = getContainerUrl(config);
+    const blobURL = BlobURL.fromContainerURL(containerURL, config.blobName);
+    const blockBlobURL = BlockBlobURL.fromBlobURL(blobURL);
+
+    const contentString = JSON.stringify(content);
+
+    return await blockBlobURL.upload(
+        Aborter.none,
+        contentString,
+        contentString.length
+    );
 }
 
 async function blobDownload(serviceURL, containerName, blobName) {
