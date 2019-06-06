@@ -37,6 +37,9 @@ module.exports = async function (context, req) {
         else if (parameters.team_id != process.env["team_id"]) {
             response_body.text += `Error: ${parameters.token} != ${process.env["team_id"]}`;
         }
+        if (parameters.text.match(/^ *help *$/) != null) {
+            response_body.text = createHelpMarkdown();
+        }
         else processCommand(parameters);
     }
 
@@ -258,4 +261,22 @@ function* addPlayer(player) {
     for (const resource of TRANSLATION.keys()) {
         yield [player, resource, resource == "tr" ? 20 : 0];
     }
+}
+
+function createHelpMarkdown() {
+    let msg = "*Abbreviation list:*\n\n";
+
+    for (const [resource, name] of TRANSLATION.entries()) {
+        msg += `${resource.padEnd(5, " ")} : ${name}\n`
+    }
+
+    msg += "\n";
+
+    for (const [resource, name] of GAME_TRANSLATION.entries()) {
+        msg += `${resource.padEnd(5, " ")} : ${name}\n`
+    }
+
+    msg += "";
+
+    return msg;
 }
