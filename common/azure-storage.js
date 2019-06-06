@@ -43,10 +43,8 @@ exports.getBlob = async function (config) {
 
     // Get blob content from position 0 to the end
     const blobString = await streamToString(downloadBlockBlobResponse.readableStreamBody);
-    //.then(blobString => console.log("Downloaded blob content", blobString))
-    //.catch(err => console.log("Caught in catch 2: ", err.message));
 
-    return blobString;
+    return JSON.parse(blobString);
 }
 
 exports.putBlob = async function (config, content) {
