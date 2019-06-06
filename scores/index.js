@@ -110,18 +110,30 @@ function createMessage(msg, replace_original = false, type = "ephemeral") {
     };
 }
 
-const TRANSLATION = {
-    "tr": "TR",
-    "p": "Power",
-    "pp": "Power Prod",
-    "c": "Cards",
-    "s": "Steel",
-    "sp": "Steel Prod",
-    "t": "Titanium",
-    "tp": "Titanium Prod",
+const TRANSLATION = new Map([
+    ["tr", "TR"],
+    ["c", "Cards"],
+    ["$", "$"],
+    ["$$", "$ Prod"],
+    ["s", "Steel"],
+    ["sp", "Steel Prod"],
+    ["t", "Titanium"],
+    ["tp", "Titanium Prod"],
+    ["g", "Greenery"],
+    ["gp", "Greenery Prod"],
+    ["g", "Greenery"],
+    ["p", "Power"],
+    ["pp", "Power Prod"],
+    ["h", "Heat"],
+    ["hp", "Heat Prod"],    
+]);
 
-    "temp": "Temperature"
-}
+const GAME_TRANSLATION = new Map([
+    ["gen", "Generation"],
+    ["temp", "Temperature"],
+    ["oxy", "Oxygen"],
+    ["lake", "Water"]
+]);
 
 function evaluateGameData(game_data) {
     const result = new Map();
@@ -129,19 +141,20 @@ function evaluateGameData(game_data) {
     for (const action of game_data) {
         let key = action[0];
         const resource = action[1];
-        const resource_name = TRANSLATION[resource] != null ? TRANSLATION[resource] : resource;
+        let resource_name = TRANSLATION.has(resource) ? TRANSLATION.get(resource) : resource;
         const resource_value = +action[2];
 
-        if (resource == "temp") {
+        if (GAME_TRANSLATION.has(resource)) {
             key = "Game";
+            resource_name = GAME_TRANSLATION.get(resource);
         }
-        
+
         if (!result.has(key)) {
             result.set(key, new Map());
         }
 
         const player = result.get(key);
-        
+
         if (!player.has(resource_name)) {
             player.set(resource_name, 0);
         }
@@ -166,8 +179,19 @@ function createScoreTable(game_data) {
     for (const [player, data] of evaluateGameData(game_data)) {
         blocks.push({ type: "divider" });
 
-        const entries = Array.from(data.entries());
-        const mapped = entries.map(e => `${e[0]}: ${e[1]}`);
+        //const entries = Array.from(data.entries());
+        let mapped = [];//entries.map(e => `${e[0]}: ${e[1]}`);
+        if (player != "Game") {
+            for (const resource of TRANSLATION.values()) {
+                mapped.push(`${resource}: ${data.has(resource) ? data.get(resource) : 0}`);
+            }
+        }
+        else {
+            for (const resource of GAME_TRANSLATION.values()) {
+                mapped.push(`${resource}: ${data.has(resource) ? data.get(resource) : 0}`);
+            }
+        }
+
         const resources = mapped.join("\t");
         const markdown = `*${player}*\n${resources}`
 
