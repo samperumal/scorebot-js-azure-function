@@ -83,7 +83,7 @@ async function processCommand(parameters) {
             }
 
             console.log(JSON.stringify(new_game_data));
-            
+
             await putBlob(config, new_game_data);
 
             await axios.post(parameters.response_url, createMessage(`Started a new game`, true, "in_channel"));
@@ -239,14 +239,23 @@ function generate(game_data) {
 
     for (const [player, data] of evaluateGameData(game_data, false)) {
         if (player != "Game") {
+            // Change energy to heat
+            const energy = data.get("p");
+            if (energy != null && energy != 0) {
+                new_data.push([player, "h", data.get("p")]);
+                new_data.push([player, "p", -data.get("p")]);
+            }
+
+            // Production to resource
             for (const [resource, value] of data.entries()) {
                 const match = resource.match(/^(.+)[p$]$/);
-                if (match != null) {
+                if (match != null && value != 0) {
                     console.log(`Add ${value} to ${match[1]} for ${player}`);
                     new_data.push([player, match[1], value]);
                 }
             }
 
+            // TR as money
             console.log(player, "$", data.get("tr"));
             new_data.push([player, "$", data.get("tr")]);
         }
