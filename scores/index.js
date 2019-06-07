@@ -66,7 +66,7 @@ async function processCommand(parameters) {
     const game_data = await getBlob(config);
 
     const re = /^ *<(@\w+)(?:[|]\w+)?> *(.+)?$/;
-    const deltaRe = /([A-Za-z$]+) *: *([0-9+\-]+)/;
+    const deltaRe = /([A-Za-z$]+) *: *([0-9+\-]+) *(?:: *([^,]+))?/;
 
     const playerMatch = re.exec(parameters.text);
 
@@ -79,7 +79,10 @@ async function processCommand(parameters) {
         else offset = game_data.length - 10;
 
         for (const action of game_data.slice(offset)) {
-            txt += `${offset}: ${action[0]} changed ${action[0] == "Game" ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}\n`;
+            txt += `${offset}: ${action[0]} changed ${GAME_TRANSLATION.has(action[1]) ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}`;
+            if (action.length > 3 && action[3] != null)
+                txt += ` with ${action[3]}`;
+            txt += "\n";
             offset += 1;
         }
 
@@ -122,11 +125,15 @@ async function processCommand(parameters) {
             const new_data = [];
             for (const action of command.split(",")) {
                 const delta_match = action.match(deltaRe);
-                if (delta_match != null && delta_match.length == 3) {
-                    const prop = delta_match[1];
+                if (delta_match != null && delta_match.length >= 3) {
+                    const prop = delta_match[1].toLowerCase();
                     const val = delta_match[2];
-                    new_data.push([player, prop, val]);
-                    txt += `${player} changed ${GAME_TRANSLATION.has(prop) ? GAME_TRANSLATION.get(prop) : TRANSLATION.get(prop)} by ${(val > 0 ? "+" : "") + val}\n`;
+                    const name = delta_match[3];
+                    new_data.push([player, prop, val, name]);
+                    txt += `${player} changed ${GAME_TRANSLATION.has(prop) ? GAME_TRANSLATION.get(prop) : TRANSLATION.get(prop)} by ${(val > 0 ? "+" : "") + val}`;
+                    if (name != null) 
+                        txt += ` with card ${name}`;
+                    txt += "\n";
                 }
             }
 
