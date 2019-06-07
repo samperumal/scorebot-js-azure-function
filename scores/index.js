@@ -70,7 +70,21 @@ async function processCommand(parameters) {
 
     const playerMatch = re.exec(parameters.text);
 
-    if (parameters.text.match(/start (.+)/) != null) {
+    if (parameters.text.match(/hist(?:ory)? *(|all|\d+) *$/)) {
+        const hist_match = parameters.text.match(/hist(?:ory)? *(|all|\d+) *$/);
+        let offset = 0, txt = "*History*\n";
+
+        if (hist_match[1] == "all") offset += 0;
+        else if (+hist_match[1] > 0) offset = game_data.length - hist_match[1];
+        else offset = game_data.length - 10;
+
+        for (const action of game_data.slice(offset)) {
+            txt += `${action[0]} changed ${action[0] == "Game" ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}\n`;
+        }
+
+        await axios.post(parameters.response_url, createMessage(txt));
+    }
+    else if (parameters.text.match(/start (.+)/) != null) {
         console.log("start");
         if (game_data != null && game_data.length == 0) {
             let new_game_data = [["Game", "gen", 0], ["Game", "temp", -30], ["Game", "oxy", 0], ["Game", "lake", 0]];
@@ -239,7 +253,7 @@ function generate(game_data) {
 
     for (const [player, data] of evaluateGameData(game_data, false)) {
         if (player != "Game") {
-            // Change energy to heat
+             // Change energy to heat
             const energy = data.get("p");
             if (energy != null && energy != 0) {
                 new_data.push([player, "h", data.get("p")]);
