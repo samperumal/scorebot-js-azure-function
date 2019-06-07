@@ -118,6 +118,7 @@ async function processCommand(parameters) {
         const command = playerMatch[2];
 
         if (command != null) {
+            let txt = "Applied updates:\n";
             const new_data = [];
             for (const action of command.split(",")) {
                 const delta_match = action.match(deltaRe);
@@ -125,12 +126,13 @@ async function processCommand(parameters) {
                     const prop = delta_match[1];
                     const val = delta_match[2];
                     new_data.push([player, prop, val]);
+                    txt += `${player} changed ${GAME_TRANSLATION.has(prop) ? GAME_TRANSLATION.get(prop) : TRANSLATION.get(prop)} by ${(val > 0 ? "+" : "") + val}\n`;
                 }
             }
 
             await putBlob(config, game_data.concat(new_data));
 
-            await axios.post(parameters.response_url, createMessage(`Applied updates : ${JSON.stringify(new_data)}`, true, "in_channel"));
+            await axios.post(parameters.response_url, createMessage(txt, true, "in_channel"));
         }
         else {
             await axios.post(parameters.response_url, createMessage("No command provided", true));
