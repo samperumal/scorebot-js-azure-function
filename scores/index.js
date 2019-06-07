@@ -79,7 +79,8 @@ async function processCommand(parameters) {
         else offset = game_data.length - 10;
 
         for (const action of game_data.slice(offset)) {
-            txt += `${action[0]} changed ${action[0] == "Game" ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}\n`;
+            txt += `${offset}: ${action[0]} changed ${action[0] == "Game" ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}\n`;
+            offset += 1;
         }
 
         await axios.post(parameters.response_url, createMessage(txt));
