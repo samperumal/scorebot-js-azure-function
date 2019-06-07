@@ -113,7 +113,15 @@ async function processCommand(parameters) {
 
         await putBlob(config, game_data.concat(new_data));
 
-        await axios.post(parameters.response_url, createMessage(`Applied updates : ${JSON.stringify(new_data)}`, true, "in_channel"));
+        let txt = `*Generation:*\n`;
+        for (const action of new_data) {
+            txt += `${action[0]} changed ${GAME_TRANSLATION.has(action[1]) ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}`;
+            if (action.length > 3 && action[3] != null)
+                txt += ` with ${action[3]}`;
+            txt += "\n";
+        }
+
+        await axios.post(parameters.response_url, createMessage(txt, true, "in_channel"));
     }
     else if (playerMatch != null && playerMatch.length > 1 && playerMatch[1] != null) {
         const user = parameters.user_id;
@@ -121,7 +129,7 @@ async function processCommand(parameters) {
         const command = playerMatch[2];
 
         if (command != null) {
-            let txt = "Applied updates:\n";
+            let txt = "*Actions:*\n";
             const new_data = [];
             for (const action of command.split(",")) {
                 const delta_match = action.match(deltaRe);
