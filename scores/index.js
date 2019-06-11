@@ -80,8 +80,12 @@ async function processCommand(parameters) {
 
         for (const action of game_data.slice(offset)) {
             txt += `${offset}: ${action[0]} changed ${GAME_TRANSLATION.has(action[1]) ? GAME_TRANSLATION.get(action[1]) : TRANSLATION.get(action[1])} by ${(action[2] > 0 ? "+" : "") + action[2]}`;
-            if (action.length > 3 && action[3] != null)
-                txt += ` with ${action[3]}`;
+            if (action.length > 3 && action[3] != null) {
+                if (action[1] == "c")
+                    txt += ` with ${action[3]}`;
+                else if (action[1] == "$")
+                    txt += ` and used ${action[3]}`;
+            }
             txt += "\n";
             offset += 1;
         }
@@ -139,7 +143,7 @@ async function processCommand(parameters) {
                     const name = delta_match[3];
                     new_data.push([player, prop, val, name]);
                     txt += `${player} changed ${GAME_TRANSLATION.has(prop) ? GAME_TRANSLATION.get(prop) : TRANSLATION.get(prop)} by ${(val > 0 ? "+" : "") + val}`;
-                    if (name != null) 
+                    if (name != null)
                         txt += ` with card ${name}`;
                     txt += "\n";
                 }
@@ -271,7 +275,7 @@ function generate(game_data) {
 
     for (const [player, data] of evaluateGameData(game_data, false)) {
         if (player != "Game") {
-             // Change energy to heat
+            // Change energy to heat
             const energy = data.get("p");
             if (energy != null && energy != 0) {
                 new_data.push([player, "h", data.get("p")]);
