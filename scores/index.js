@@ -160,6 +160,8 @@ async function processCommand(parameters) {
     else {
         try {
             const msg = createScoreTable(game_data);
+            if (parameters.text.match(/public/) != null)
+                msg.response_type = "in_channel";
             await axios.post(parameters.response_url, msg);
         }
         catch (err) {
