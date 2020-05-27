@@ -1,5 +1,6 @@
 const {
     Aborter,
+    AppendBlobURL,
     BlobURL,
     BlockBlobURL,
     ContainerURL,
@@ -55,6 +56,20 @@ exports.putBlob = async function (config, content) {
     const contentString = JSON.stringify(content);
 
     return await blockBlobURL.upload(
+        Aborter.none,
+        contentString,
+        contentString.length
+    );
+}
+
+exports.appendBlob = async function(config, content) {
+    const [serviceURL, containerURL] = getContainerUrl(config);
+    const blobURL = BlobURL.fromContainerURL(containerURL, config.blobName);
+    const blockBlobURL = AppendBlobURL.fromBlobURL(blobURL);
+
+    const contentString = JSON.stringify(content) + ",\n";
+
+    return await blockBlobURL.appendBlock(
         Aborter.none,
         contentString,
         contentString.length
